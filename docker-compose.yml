@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  # FastAPI应用服务
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gugugu-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - HOST=0.0.0.0
+      - PORT=8000
+      - PROJECT_NAME=Gugugu API
+    volumes:
+      # 开发模式下挂载代码目录（可选）
+      - ./main.py:/app/main.py
+      - ./.env:/app/.env
+    restart: unless-stopped
+    networks:
+      - gugugu-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx反向代理（可选）
+  nginx:
+    image: nginx:alpine
+    container_name: gugugu-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    restart: unless-stopped
+    networks:
+      - gugugu-network
+
+  # Redis缓存（可选，为将来扩展准备）
+  redis:
+    image: redis:7-alpine
+    container_name: gugugu-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - gugugu-network
+    command: redis-server --appendonly yes
+
+  # PostgreSQL数据库（可选，为将来扩展准备）
+  postgres:
+    image: postgres:15-alpine
+    container_name: gugugu-postgres
+    environment:
+      POSTGRES_DB: gugugu
+      POSTGRES_USER: gugugu_user
+      POSTGRES_PASSWORD: gugugu_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - gugugu-network
+
+networks:
+  gugugu-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  postgres_data:
