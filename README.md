@@ -37,7 +37,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ### Docker部署 🐳
 
-我们提供了完整的Docker解决方案，支持简单模式和完整生产环境模式。
+我们提供了完整的Docker解决方案，支持热重载的开发环境。
 
 #### 快速启动
 
@@ -47,20 +47,18 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ./docker-start.sh
 ```
 
+该脚本提供5个简单选项：
+1. 启动服务（支持热重载）
+2. 停止所有服务  
+3. 查看服务状态
+4. 查看日志
+5. 重启服务
+
 #### 手动Docker命令
 
-**简单模式（仅FastAPI应用）：**
+**启动服务（支持热重载）：**
 ```bash
-# 使用简单配置启动
-docker compose -f docker-compose.simple.yml up -d --build
-
-# 停止服务
-docker compose -f docker-compose.simple.yml down
-```
-
-**完整模式（包含Nginx、Redis、PostgreSQL）：**
-```bash
-# 启动完整服务栈
+# 启动服务栈
 docker compose up -d --build
 
 # 停止所有服务
@@ -79,10 +77,11 @@ docker run -d -p 8000:8000 --name gugugu-container gugugu-api
 
 #### 服务访问地址
 
-- **API服务**: http://localhost:8000
+- **API服务**: http://localhost:8000 （支持热重载）
 - **API文档**: http://localhost:8000/docs
 - **健康检查**: http://localhost:8000/health
-- **Web服务** (完整模式): http://localhost (Nginx代理)
+- **Web服务** (Nginx代理): http://localhost
+- **Redis缓存**: localhost:6379
 
 更多Docker相关信息请查看 [DOCKER.md](./DOCKER.md)
 

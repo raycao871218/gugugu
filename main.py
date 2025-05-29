@@ -90,4 +90,11 @@ async def delete_item(item_id: int):
     raise HTTPException(status_code=404, detail="物品未找到")
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import os
+    reload = os.getenv("DEBUG", "False").lower() == "true"
+    uvicorn.run(
+        "main:app", 
+        host="0.0.0.0", 
+        port=8000, 
+        reload=reload
+    )
