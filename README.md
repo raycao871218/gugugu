@@ -12,6 +12,8 @@
 - 🎯 RESTful API设计
 - 🐳 Docker容器化支持
 - 🚀 多环境部署配置
+- 🤖 AI对话功能集成
+- 🔐 安全配置管理
 
 ## 快速开始
 
@@ -37,9 +39,25 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 ### Docker部署 🐳
 
-我们提供了完整的Docker解决方案，支持简单模式和完整生产环境模式。
+我们提供了完整的Docker解决方案，支持热重载的开发环境。
 
-#### 快速启动
+#### 环境变量配置
+
+在使用Docker之前，请确保您已经正确配置了环境变量：
+
+1. **复制环境变量模板**：
+```bash
+cp .env.example .env
+```
+
+2. **编辑.env文件**，配置以下重要参数：
+   - `OPENAI_API_KEY`: 您的OpenAI API密钥
+   - `POSTGRES_PASSWORD`: 数据库密码
+   - `SECRET_KEY`: 应用安全密钥
+
+**注意**: `.env`文件包含敏感信息，已被添加到`.gitignore`中，不会被提交到版本控制系统。
+
+### 快速启动
 
 使用我们提供的交互式脚本：
 
@@ -47,20 +65,18 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ./docker-start.sh
 ```
 
+该脚本提供5个简单选项：
+1. 启动服务（支持热重载）
+2. 停止所有服务  
+3. 查看服务状态
+4. 查看日志
+5. 重启服务
+
 #### 手动Docker命令
 
-**简单模式（仅FastAPI应用）：**
+**启动服务（支持热重载）：**
 ```bash
-# 使用简单配置启动
-docker compose -f docker-compose.simple.yml up -d --build
-
-# 停止服务
-docker compose -f docker-compose.simple.yml down
-```
-
-**完整模式（包含Nginx、Redis、PostgreSQL）：**
-```bash
-# 启动完整服务栈
+# 启动服务栈
 docker compose up -d --build
 
 # 停止所有服务
@@ -79,18 +95,45 @@ docker run -d -p 8000:8000 --name gugugu-container gugugu-api
 
 #### 服务访问地址
 
-- **API服务**: http://localhost:8000
+- **API服务**: http://localhost:8000 （支持热重载）
 - **API文档**: http://localhost:8000/docs
 - **健康检查**: http://localhost:8000/health
-- **Web服务** (完整模式): http://localhost (Nginx代理)
+- **Web服务** (Nginx代理): http://localhost
+- **Redis缓存**: localhost:6379
 
 更多Docker相关信息请查看 [DOCKER.md](./DOCKER.md)
+
+## 安全配置
+
+### 快速安全设置
+
+使用我们提供的密钥生成脚本：
+
+```bash
+./generate-keys.sh
+```
+
+该脚本会：
+- 自动生成安全的SECRET_KEY
+- 创建强数据库密码
+- 设置正确的文件权限
+- 提供配置指导
+
+详细安全配置请查看 [SECURITY.md](./SECURITY.md)
+
+## 部署指南
+
+完整的部署检查清单和步骤请参考 [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ## API端点
 
 ### 基础端点
 - `GET /` - 欢迎消息
 - `GET /health` - 健康检查
+
+### AI功能端点
+- `GET /ai/health` - AI服务健康检查
+- `POST /ai/chat` - AI对话接口
 
 ### 物品管理
 - `GET /items` - 获取所有物品
@@ -100,6 +143,28 @@ docker run -d -p 8000:8000 --name gugugu-container gugugu-api
 - `DELETE /items/{item_id}` - 删除物品
 
 ## 数据模型
+
+### AI对话请求
+```json
+{
+  "message": "你好，请介绍一下你自己",
+  "max_tokens": 1000,
+  "temperature": 0.7
+}
+```
+
+### AI对话响应
+```json
+{
+  "response": "你好！我是DeepSeek Chat...",
+  "model": "deepseek-ai/DeepSeek-V3",
+  "usage": {
+    "completion_tokens": 100,
+    "prompt_tokens": 10,
+    "total_tokens": 110
+  }
+}
+```
 
 ### Item
 ```json

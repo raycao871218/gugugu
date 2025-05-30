@@ -1,4 +1,4 @@
-# 使用官方Python运行时作为基础镜像
+# 开发环境Dockerfile - 支持热重载
 FROM python:3.11-slim
 
 # 设置工作目录
@@ -23,20 +23,19 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# 复制项目文件
-COPY . .
-
 # 创建非root用户
 RUN adduser --disabled-password --gecos '' --shell /bin/bash user \
     && chown -R user:user /app
+
+# 切换到非root用户
 USER user
 
 # 暴露端口
 EXPOSE 8000
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# 启动命令 - 支持热重载
-CMD ["python", "main.py"]
+# 开发环境启动命令 - 支持热重载
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

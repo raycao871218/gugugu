@@ -1,23 +1,23 @@
 # Docker Setup and Usage Guide for Gugugu API
 
 ## Overview
-This document describes how to build, run, and deploy the Gugugu FastAPI application using Docker.
+This document describes how to build, run, and deploy the Gugugu FastAPI application using Docker with hot reload support for development.
 
 ## Quick Start
 
 ### Using Docker Compose (Recommended)
 ```bash
-# Start the application
-docker compose up -d app
+# Start the application with hot reload
+docker compose up -d --build app
 
 # Stop the application  
 docker compose down
 
 # View logs
-docker compose logs app
+docker compose logs -f app
 
-# Rebuild and restart
-docker compose up -d --build app
+# Restart with hot reload
+docker compose restart app
 ```
 
 ### Using Docker directly
@@ -64,19 +64,31 @@ Open in browser: `http://localhost:8000/docs`
 
 ## Development Workflow
 
-### Development Mode
-For development with live code reloading:
+### Hot Reload Development Mode
+The Docker environment is configured with hot reload support by default:
+
 ```bash
-# Mount source code and start with auto-reload
-docker compose up -d app
-# Note: Volume mounting is configured in docker-compose.yml
+# Start development environment with hot reload
+docker compose up -d --build app
+
+# Code changes will automatically trigger server reload
+# No need to restart the container for code changes
 ```
 
+### Key Features:
+- **Volume Mounting**: Source code is mounted into the container (`.:/app`)
+- **Auto Reload**: Changes to Python files trigger automatic server restart
+- **Debug Mode**: `DEBUG=True` environment variable enables reload functionality
+- **Cache Exclusion**: `__pycache__` directories are excluded from mounting
+
 ### Production Mode
-For production deployment:
+For production deployment without hot reload:
 ```bash
-# Use the built image without volume mounting
-docker run -d -p 8000:8000 gugugu-api
+# Build production image
+docker build -t gugugu-api-prod .
+
+# Run without volume mounting and DEBUG=False
+docker run -d -p 8000:8000 -e DEBUG=False gugugu-api-prod
 ```
 
 ## Docker Configuration Files
