@@ -3,11 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
 import uvicorn
+import os
+from openai import OpenAI
 
 # 创建FastAPI应用实例
 app = FastAPI(
     title="Gugugu API",
-    description="一个使用FastAPI构建的API服务",
+    description="一个使用FastAPI构建的API服务，集成AI对话功能",
     version="1.0.0"
 )
 
@@ -20,7 +22,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# 初始化 OpenAI 客户端
+def get_ai_client():
+    api_key = os.getenv("OPENAI_API_KEY")
+    base_url = os.getenv("OPENAI_API_BASE")
+    if not api_key:
+        raise ValueError("OPENAI_API_KEY environment variable is not set")
+    return OpenAI(api_key=api_key, base_url=base_url)
+
 # 数据模型
+class AIRequest(BaseModel):
+    message: str
+    max_tokens: Optional[int] = 1000
+    temperature: Optional[float] = 0.7
+
+class AIResponse(BaseModel):
+    response: str
+    model: str
+    usage: Optional[dict] = None
 class Item(BaseModel):
     id: Optional[int] = None
     name: str
@@ -88,6 +107,66 @@ async def delete_item(item_id: int):
             del items_db[i]
             return {"message": "物品已删除"}
     raise HTTPException(status_code=404, detail="物品未找到")
+
+# AI 对话接口
+@app.post("/ai/chat", response_model=AIResponse)
+async def chat_with_ai(request: AIRequest):
+    """
+    与AI模型进行对话
+    """
+    try:
+        client = get_ai_client()
+        model = os.getenv("AI_MODEL", "deepseek-ai/DeepSeek-V3")
+        
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "user", "content": request.message}
+            ],
+            max_tokens=request.max_tokens,
+            temperature=request.temperature
+        )
+        
+        return AIResponse(
+            response=response.choices[0].message.content,
+            model=model,
+            usage=response.usage.dict() if response.usage else None
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI服务调用失败: {str(e)}")
+
+# AI 健康检查
+@app.get("/ai/health")
+async def ai_health_check():
+    """
+    检查AI服务连接状态
+    """
+    try:
+        client = get_ai_client()
+        model = os.getenv("AI_MODEL", "deepseek-ai/DeepSeek-V3")
+        
+        # 发送一个简单的测试请求
+        response = client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": "Hello"}],
+            max_tokens=10
+        )
+        
+        return {
+            "status": "healthy",
+            "model": model,
+            "api_base": os.getenv("OPENAI_API_BASE"),
+            "test_response": response.choices[0].message.content
+        }
+        
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "error": str(e),
+            "model": os.getenv("AI_MODEL", "deepseek-ai/DeepSeek-V3"),
+            "api_base": os.getenv("OPENAI_API_BASE")
+        }
 
 if __name__ == "__main__":
     import os

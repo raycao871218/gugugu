@@ -12,6 +12,8 @@
 - 🎯 RESTful API设计
 - 🐳 Docker容器化支持
 - 🚀 多环境部署配置
+- 🤖 AI对话功能集成
+- 🔐 安全配置管理
 
 ## 快速开始
 
@@ -39,7 +41,23 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 我们提供了完整的Docker解决方案，支持热重载的开发环境。
 
-#### 快速启动
+#### 环境变量配置
+
+在使用Docker之前，请确保您已经正确配置了环境变量：
+
+1. **复制环境变量模板**：
+```bash
+cp .env.example .env
+```
+
+2. **编辑.env文件**，配置以下重要参数：
+   - `OPENAI_API_KEY`: 您的OpenAI API密钥
+   - `POSTGRES_PASSWORD`: 数据库密码
+   - `SECRET_KEY`: 应用安全密钥
+
+**注意**: `.env`文件包含敏感信息，已被添加到`.gitignore`中，不会被提交到版本控制系统。
+
+### 快速启动
 
 使用我们提供的交互式脚本：
 
@@ -85,11 +103,37 @@ docker run -d -p 8000:8000 --name gugugu-container gugugu-api
 
 更多Docker相关信息请查看 [DOCKER.md](./DOCKER.md)
 
+## 安全配置
+
+### 快速安全设置
+
+使用我们提供的密钥生成脚本：
+
+```bash
+./generate-keys.sh
+```
+
+该脚本会：
+- 自动生成安全的SECRET_KEY
+- 创建强数据库密码
+- 设置正确的文件权限
+- 提供配置指导
+
+详细安全配置请查看 [SECURITY.md](./SECURITY.md)
+
+## 部署指南
+
+完整的部署检查清单和步骤请参考 [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ## API端点
 
 ### 基础端点
 - `GET /` - 欢迎消息
 - `GET /health` - 健康检查
+
+### AI功能端点
+- `GET /ai/health` - AI服务健康检查
+- `POST /ai/chat` - AI对话接口
 
 ### 物品管理
 - `GET /items` - 获取所有物品
@@ -99,6 +143,28 @@ docker run -d -p 8000:8000 --name gugugu-container gugugu-api
 - `DELETE /items/{item_id}` - 删除物品
 
 ## 数据模型
+
+### AI对话请求
+```json
+{
+  "message": "你好，请介绍一下你自己",
+  "max_tokens": 1000,
+  "temperature": 0.7
+}
+```
+
+### AI对话响应
+```json
+{
+  "response": "你好！我是DeepSeek Chat...",
+  "model": "deepseek-ai/DeepSeek-V3",
+  "usage": {
+    "completion_tokens": 100,
+    "prompt_tokens": 10,
+    "total_tokens": 110
+  }
+}
+```
 
 ### Item
 ```json

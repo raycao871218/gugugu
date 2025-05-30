@@ -8,10 +8,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DEBUG=True
-      - HOST=0.0.0.0
-      - PORT=8000
-      - PROJECT_NAME=Gugugu API
+      - DEBUG=${DEBUG}
+      - HOST=${HOST}
+      - PORT=${PORT}
+      - PROJECT_NAME=${PROJECT_NAME}
+      - OPENAI_API_BASE=${OPENAI_API_BASE}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - AI_MODEL=${AI_MODEL}
     volumes:
       # 开发模式下挂载代码目录实现热重载
       - .:/app
@@ -59,9 +62,9 @@ services:
     image: postgres:15-alpine
     container_name: gugugu-postgres
     environment:
-      POSTGRES_DB: gugugu
-      POSTGRES_USER: gugugu_user
-      POSTGRES_PASSWORD: gugugu_password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
