@@ -26,23 +26,6 @@ class AIResponse(BaseModel):
     usage: Optional[dict] = None
 
 
-class Item(BaseModel):
-    """Item model with ID (for responses)"""
-    id: Optional[int] = None
-    name: str
-    description: Optional[str] = None
-    price: float
-    is_available: bool = True
-
-
-class ItemCreate(BaseModel):
-    """Item creation model (without ID)"""
-    name: str
-    description: Optional[str] = None
-    price: float
-    is_available: bool = True
-
-
 class HealthResponse(BaseModel):
     """Health check response model"""
     status: str

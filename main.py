@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 # Import routers
-from api.routers import health, items, ai
+from api.routers import health, ai
 from api.core.config import get_debug_mode
 
 # Create FastAPI application instance
@@ -28,7 +28,6 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router)
-app.include_router(items.router)
 app.include_router(ai.router)
 
 
