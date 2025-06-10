@@ -358,6 +358,49 @@ async def process_splendor_document():
         raise HTTPException(status_code=500, detail=f"璀璨宝石规则文档处理失败: {str(e)}")
 
 
+@router.post("/documents/process-catan", response_model=DocumentProcessResponse)
+async def process_catan_document():
+    """
+    Process the Catan game rules document using file name
+    
+    Returns:
+        DocumentProcessResponse: Processing result for catan.md
+    """
+    try:
+        # Process using file name (much cleaner!)
+        success = vector_store.add_document(file_name="catan.md", force_reprocess=True)
+        
+        if success:
+            # Get the resolved path for metadata
+            resolved_path = vector_store._resolve_file_path(file_name="catan.md")
+            
+            # Get chunk count
+            files = vector_store.list_files()
+            chunk_count = next(
+                (f['chunk_count'] for f in files if f['file_path'] == resolved_path),
+                0
+            )
+            
+            return DocumentProcessResponse(
+                success=True,
+                message=f"卡坦岛规则文档处理成功，生成了 {chunk_count} 个文档片段",
+                file_path=resolved_path,
+                chunk_count=chunk_count
+            )
+        else:
+            resolved_path = vector_store._resolve_file_path(file_name="catan.md")
+            return DocumentProcessResponse(
+                success=False,
+                message="卡坦岛规则文档处理失败",
+                file_path=resolved_path
+            )
+            
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=f"卡坦岛规则文档不存在: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"卡坦岛规则文档处理失败: {str(e)}")
+
+
 @router.post("/documents/process-batch", response_model=List[DocumentProcessResponse])
 async def process_documents_batch(request: List[DocumentProcessRequest]):
     """
@@ -549,10 +592,23 @@ async def chat_with_advanced_rag(request: RAGRequest):
                 'content_preview': result['content'][:200] + "..." if len(result['content']) > 200 else result['content']
             })
         
+        # Determine game type from file path or content
+        game_type = "通用"
+        system_prompt = "你是桌游专家助手，精通各种桌游规则和策略。"
+        
+        if sources:
+            file_name = os.path.basename(sources[0]['file_path']).lower()
+            if 'splendor' in file_name:
+                game_type = "璀璨宝石（Splendor）"
+                system_prompt = "你是璀璨宝石（Splendor）桌游的专业助手，精通游戏规则和策略。"
+            elif 'catan' in file_name:
+                game_type = "卡坦岛（Catan）"
+                system_prompt = "你是卡坦岛（Catan）桌游的专业助手，精通游戏规则和策略。"
+        
         # Prepare enhanced prompt with context
         if context_parts:
             context = "\n\n".join(context_parts)
-            prompt = f"""作为璀璨宝石（Splendor）游戏专家，请基于以下文档内容准确回答用户问题。请提供详细、实用的回答，并在适当时引用具体规则。
+            prompt = f"""作为{game_type}游戏专家，请基于以下文档内容准确回答用户问题。请提供详细、实用的回答，并在适当时引用具体规则。
 
 相关文档内容：
 {context}
@@ -561,7 +617,7 @@ async def chat_with_advanced_rag(request: RAGRequest):
 
 请提供详细、准确的回答："""
         else:
-            prompt = f"作为璀璨宝石（Splendor）游戏专家，没有找到直接相关的文档内容。请基于你的游戏知识回答用户问题：{request.message}"
+            prompt = f"作为{game_type}游戏专家，没有找到直接相关的文档内容。请基于你的游戏知识回答用户问题：{request.message}"
         
         # Call AI model
         client = get_ai_client()
@@ -570,7 +626,7 @@ async def chat_with_advanced_rag(request: RAGRequest):
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": "你是璀璨宝石（Splendor）桌游的专业助手，精通游戏规则和策略。"},
+                {"role": "system", "content": system_prompt},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=request.max_tokens,
